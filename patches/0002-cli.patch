@@ -5,13 +5,13 @@ index 8184f98..312fe6a 100644
 @@ -7217,6 +7217,48 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
          except Exception as e:
              print(f"(x_x) Failed to save: {e}")
-
+     
 +    def _handle_saved_command(self, cmd_original: str):
 +        """Handle /saved <file_name> [--overwrite|--append].
 +
 +        Summarises the current conversation via the auxiliary LLM and writes
-+        the summary to the specified file.  Default mode is --append
-+        (adds a timestamped header); --overwrite replaces the file.
++        the summary to the specified file.  Default mode is ``--append``
++        (adds a timestamped header); ``--overwrite`` replaces the file.
 +        """
 +        from pathlib import Path
 +        from hermes_cli.save_summarized import parse_saved_args, summarize_conversation, write_summary
@@ -31,7 +31,7 @@ index 8184f98..312fe6a 100644
 +        mode = parsed["mode"]
 +
 +        if not self.conversation_history:
-+            print("(._.) No conversation to summarise.")
++            print("  (._.) No conversation to summarise.")
 +            return
 +
 +        print(f"  Summarising conversation...")
@@ -50,7 +50,7 @@ index 8184f98..312fe6a 100644
 +
      def retry_last(self):
          """Retry the last user message by removing the last exchange and re-sending.
-
+         
 @@ -8663,6 +8705,8 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
              self._handle_branch_command(cmd_original)
          elif canonical == "save":
