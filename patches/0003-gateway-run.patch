@@ -1,0 +1,13 @@
+diff --git a/gateway/run.py b/gateway/run.py
+index e5ca409..41a2701 100644
+--- a/gateway/run.py
++++ b/gateway/run.py
+@@ -10206,6 +10206,9 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
+         if canonical == "compress":
+             return await self._handle_compress_command(event)
+
++        if canonical == "saved":
++            return await self._handle_saved_command(event)
++
+         if canonical == "usage":
+             return await self._handle_usage_command(event)
