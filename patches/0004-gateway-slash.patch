@@ -1,0 +1,52 @@
+diff --git a/gateway/slash_commands.py b/gateway/slash_commands.py
+index 845f44a..96a0b25 100644
+--- a/gateway/slash_commands.py
++++ b/gateway/slash_commands.py
+@@ -3444,6 +3444,48 @@ class GatewaySlashCommandsMixin:
+             logger.warning("Manual compress failed: %s", e)
+             return t("gateway.compress.failed", error=e)
+
++    async def _handle_saved_command(self, event: MessageEvent) -> str:
++        """Handle /saved <file_name> [--overwrite|--append].
++
++        Summarises the current conversation via the auxiliary LLM and writes
++        the summary to the specified file.
++        """
++        from pathlib import Path
++        from hermes_cli.save_summarized import parse_saved_args, summarize_conversation, write_summary
++
++        raw_args = (event.get_command_args() or "").strip()
++        parsed = parse_saved_args(raw_args)
++        if parsed.get("error"):
++            return f"{parsed['error']}"
++
++        file_path = parsed["file"]
++        mode = parsed["mode"]
++
++        # Load conversation from session store
++        source = event.source
++        session_entry = await self.async_session_store.get_or_create_session(source)
++        history = await self.async_session_store.load_transcript(session_entry.session_id)
++
++        if not history:
++            return "No conversation to summarise."
++
++        # Filter to user/assistant/tool messages
++        msgs = [m for m in history if m.get("role") in {"user", "assistant", "tool"}]
++        if not msgs:
++            return "No conversation to summarise."
++
++        summary = summarize_conversation(msgs)
++        if summary is None:
++            return "Summarisation failed — check your model/provider config."
++
++        error = write_summary(file_path, summary, mode)
++        if error:
++            return f"Failed to write {file_path}: {error}"
++
++        mode_label = "overwrote" if mode == "overwrite" else "appended to"
++        return f"Summary {mode_label}: {Path(file_path).expanduser()}"
++
+     async def _handle_topic_command(self, event: MessageEvent, args: str = "") -> str:
+         """Handle /topic for Telegram DM user-managed topic sessions."""
+         source = event.source
