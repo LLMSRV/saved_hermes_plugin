@@ -2,7 +2,7 @@
 /save_summarized helper
 =======================
 
-Shared logic for the ``/saved slash command: summarise the current
+Shared logic for the ``/saved`` slash command: summarise the current
 conversation via the auxiliary LLM and write the result to a user-
 specified file.
 
@@ -17,8 +17,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+
 def parse_saved_args(raw_args: str) -> Dict[str, Any]:
-    """Parse ``/saved <file> [--overwrite|--append] arguments."""
+    """Parse ``/saved <file> [--overwrite|--append]`` arguments."""
     if not raw_args.strip():
         return {"error": "Usage: /saved <file_name> [--overwrite|--append]"}
 
@@ -36,6 +37,7 @@ def parse_saved_args(raw_args: str) -> Dict[str, Any]:
     except SystemExit:
         return {"error": "Usage: /saved <file_name> [--overwrite|--append]"}
 
+
 def _extract_user_assistant(messages: List[Dict[str, Any]]) -> List[str]:
     """Extract user/assistant turns as readable text, skipping tool calls."""
     lines = []
@@ -50,6 +52,7 @@ def _extract_user_assistant(messages: List[Dict[str, Any]]) -> List[str]:
         if content:
             lines.append(f"{role}: {content}")
     return lines
+
 
 def build_summary_prompt(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Build the LLM prompt for summarising a conversation."""
@@ -71,6 +74,7 @@ def build_summary_prompt(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         {"role": "user", "content": transcript},
     ]
 
+
 def summarize_conversation(messages: List[Dict[str, Any]]) -> Optional[str]:
     """Call the auxiliary LLM to summarise the conversation."""
     try:
@@ -86,11 +90,12 @@ def summarize_conversation(messages: List[Dict[str, Any]]) -> Optional[str]:
     except Exception as e:
         return None
 
-def write_summary(file_path: str, summary: str, mode: str) -> Optional[str]:
-    """Write the summary to ``file_path.
 
-    ``mode is "overwrite" (replace) or "append" (add with header).
-    Returns an error string on failure, or ``None on success.
+def write_summary(file_path: str, summary: str, mode: str) -> Optional[str]:
+    """Write the summary to ``file_path``.
+
+    ``mode`` is ``"overwrite"`` (replace) or ``"append"`` (add with header).
+    Returns an error string on failure, or ``None`` on success.
     """
     try:
         path = Path(file_path).expanduser()
