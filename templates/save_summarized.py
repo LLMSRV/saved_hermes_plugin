@@ -1,0 +1,92 @@
+"""Shared helper for /saved slash command.
+
+Parses arguments, summarises a list of messages via the auxiliary LLM,
+and writes the result to a file (overwrite or append mode).
+"""
+
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from agent.auxiliary_client import call_llm
+
+logger = logging.getLogger(__name__)
+
+
+def parse_saved_args(raw: str) -> Dict[str, Any]:
+    """Parse /saved arguments: filename and mode flags.
+
+    Returns {"file": str, "mode": str} or {"error": str}.
+    """
+    if not raw:
+        return {"error": "Usage: /saved <filename> [--overwrite|--append]"}
+
+    mode = "append"  # default
+    args = raw
+
+    if "--overwrite" in args:
+        mode = "overwrite"
+        args = args.replace("--overwrite", "").strip()
+
+    if "--append" in args:
+        mode = "append"
+        args = args.replace("--append", "").strip()
+
+    file_path = args.strip()
+    if not file_path:
+        return {"error": "Please specify a filename: /saved filename.md"}
+
+    return {"file": file_path, "mode": mode}
+
+
+def summarize_conversation(messages: List[Dict[str, Any]]) -> Optional[str]:
+    """Send conversation messages to the auxiliary LLM for summarisation."""
+    if not messages:
+        logger.warning("summarize_conversation called with empty messages")
+        return None
+
+    system_prompt = (
+        "You are a concise summariser. Produce a clear, structured summary "
+        "of a conversation. Include key topics, decisions, code snippets or "
+        "commands that were important, and any action items or follow-ups. "
+        "Omit filler and repetitive exchanges. Use markdown formatting. "
+        "Do NOT include preamble — start directly with the summary."
+    )
+
+    try:
+        resp = call_llm(
+            task="compression",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": str(messages)},
+            ],
+            max_tokens=4096,
+            temperature=0.3,
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        logger.warning("Summarisation failed: %s", e)
+        return None
+
+
+def write_summary(file_path: str, summary: str, mode: str = "append") -> Optional[str]:
+    """Write summary to file, overwriting or appending."""
+    try:
+        path = Path(file_path).expanduser()
+
+        if mode == "overwrite":
+            path.write_text(summary)
+        else:
+            # Append mode: add a separator header before the summary
+            if path.exists():
+                with path.open("a") as f:
+                    f.write("\n\n--- Summarised ---\n\n")
+                    f.write(summary)
+            else:
+                path.write_text(summary)
+
+        return None
+    except Exception as e:
+        return str(e)
