@@ -5,7 +5,8 @@ index 845f44a..96a0b25 100644
 @@ -3444,6 +3444,48 @@ class GatewaySlashCommandsMixin:
              logger.warning("Manual compress failed: %s", e)
              return t("gateway.compress.failed", error=e)
-
+ 
+ 
 +    async def _handle_saved_command(self, event: MessageEvent) -> str:
 +        """Handle /saved <file_name> [--overwrite|--append].
 +
