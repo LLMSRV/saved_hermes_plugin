@@ -1,0 +1,62 @@
+diff --git a/cli.py b/cli.py
+index 8184f98..312fe6a 100644
+--- a/cli.py
++++ b/cli.py
+@@ -7217,6 +7217,48 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
+         except Exception as e:
+             print(f"(x_x) Failed to save: {e}")
+
++    def _handle_saved_command(self, cmd_original: str):
++        """Handle /saved <file_name> [--overwrite|--append].
++
++        Summarises the current conversation via the auxiliary LLM and writes
++        the summary to the specified file.  Default mode is --append
++        (adds a timestamped header); --overwrite replaces the file.
++        """
++        from pathlib import Path
++        from hermes_cli.save_summarized import parse_saved_args, summarize_conversation, write_summary
++
++        raw_args = ""
++        if cmd_original:
++            parts = cmd_original.strip().split(None, 1)
++            if len(parts) > 1:
++                raw_args = parts[1].strip()
++
++        parsed = parse_saved_args(raw_args)
++        if parsed.get("error"):
++            print(f"  {parsed['error']}")
++            return
++
++        file_path = parsed["file"]
++        mode = parsed["mode"]
++
++        if not self.conversation_history:
++            print("(._.) No conversation to summarise.")
++            return
++
++        print(f"  Summarising conversation...")
++        summary = summarize_conversation(self.conversation_history)
++        if summary is None:
++            print("  (x_x) Summarisation failed — check your model/provider config.")
++            return
++
++        error = write_summary(file_path, summary, mode)
++        if error:
++            print(f"  (x_x) Failed to write {file_path}: {error}")
++            return
++
++        mode_label = "overwrote" if mode == "overwrite" else "appended to"
++        print(f"  (^_^)v Summary {mode_label}: {Path(file_path).expanduser()}")
++
+     def retry_last(self):
+         """Retry the last user message by removing the last exchange and re-sending.
+
+@@ -8663,6 +8705,8 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
+             self._handle_branch_command(cmd_original)
+         elif canonical == "save":
+             self.save_conversation()
++        elif canonical == "saved":
++            self._handle_saved_command(cmd_original)
+         elif canonical == "cron":
+             self._handle_cron_command(cmd_original)
+         elif canonical == "suggestions":
