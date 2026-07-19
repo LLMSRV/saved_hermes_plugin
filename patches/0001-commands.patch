@@ -1,0 +1,11 @@
+diff --git a/hermes_cli/commands.py b/hermes_cli/commands.py
+index 10f8fbf..7b2c2e8 100644
+--- a/hermes_cli/commands.py
++++ b/hermes_cli/commands.py
+@@ -77,6 +77,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
+                cli_only=True),
+     CommandDef("save", "Save the current conversation", "Session",
+                cli_only=True),
++    CommandDef("saved", "Summarise the current conversation and save to a file", "Session",
++               args_hint="<file_name> [--overwrite|--append]"),
+     CommandDef("retry", "Retry the last message (resend to agent)", "Session"),
